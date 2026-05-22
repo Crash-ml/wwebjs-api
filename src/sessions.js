@@ -2,7 +2,7 @@ const { Client, LocalAuth } = require('whatsapp-web.js')
 const fs = require('fs')
 const path = require('path')
 const sessions = new Map()
-const { baseWebhookURL, sessionFolderPath, maxAttachmentSize, setMessagesAsSeen, webVersion, webVersionCacheType, recoverSessions, chromeBin, headless, releaseBrowserLock } = require('./config')
+const { baseWebhookURL, sessionFolderPath, maxAttachmentSize, setMessagesAsSeen, webVersion, webVersionCacheType, recoverSessions, chromeBin, headless, releaseBrowserLock, proxyUrl, proxyUsername, proxyPassword } = require('./config')
 const { triggerWebhook, waitForNestedObject, isEventEnabled, sendMessageSeenStatus, sleep, patchWWebLibrary } = require('./utils')
 const { logger } = require('./logger')
 const { initWebSocketServer, terminateWebSocketServer, triggerWebSocket } = require('./websocket')
@@ -138,10 +138,15 @@ const setupSession = async (sessionId) => {
           '--use-mock-keychain',
           '--disable-setuid-sandbox',
           '--no-sandbox',
-          '--disable-blink-features=AutomationControlled'
+          '--disable-blink-features=AutomationControlled',
+          ...(proxyUrl ? [`--proxy-server=${proxyUrl}`] : [])
         ]
       },
       authStrategy: localAuth
+    }
+
+    if (proxyUrl && proxyUsername && proxyPassword) {
+      clientOptions.proxyAuthentication = { username: proxyUsername, password: proxyPassword }
     }
 
     if (webVersion) {
